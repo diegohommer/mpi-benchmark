@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH --job-name=mpi_coletiva
+#SBATCH --partition=hype
+#SBATCH --nodes=3
+#SBATCH --ntasks=40
+#SBATCH --time=6:00:00
+#SBATCH --output=%x_%j.out
+#SBATCH --error=%x_%j.err
+
+# Parâmetros: tamanho da matriz e programa (opcional)
+MATRIX_SIZE=${1:-2048}
+PROGRAM=${2:-mpi_coletiva}
+
+MACHINEFILE="nodes.$SLURM_JOB_ID"
+srun -l hostname | sort -n | awk '{print $2}' > $MACHINEFILE
+
+mpirun -np $SLURM_NTASKS \
+       -machinefile $MACHINEFILE \
+       --mca btl ^openib \
+       --mca btl_tcp_if_include eno2 \
+       --bind-to none \
+       ./$PROGRAM $MATRIX_SIZE
